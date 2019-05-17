@@ -7,15 +7,15 @@ var ffmpeg = require('fluent-ffmpeg'); //创建一个ffmpeg命令
 var AipSpeechServer = require('baidu-aip-sdk').speech;
 
 //前端返回数据start
-var theLight = 'turn on';
-var theCurtain = 'turn off';
+var theLight = 'NA';
+var theCurtain = 'NA';
 
-var wdData = '40';
-var sdData = '';
-var airData = '';
-var rainData = '';
-var gasData = '';
-var fireData = '不安全';
+var wdData = 'NA';
+var sdData = 'NA';
+var airData = 'NA';
+var rainData = 'NA';
+var gasData = 'NA';
+var fireData = 'NA';
 //前端返回数据end
 
 
@@ -57,13 +57,14 @@ netServer.listen(8124);
 //端口监听end
 
 //返回数据加入数据库处理start
-function dataHandle(datastr){
+function dataHandle(datastr) {
 
   var date = new Date();
   datatimes = date.toLocaleString();
   //开关灯start
   if (datastr.indexOf("L") != -1) {
     var N = [];
+
     function Abc(datastr) {
       return datastr.match(/[^,]+/gm);
     }
@@ -79,8 +80,7 @@ function dataHandle(datastr){
         }
         theLight = 'turn on';
       });
-    }
-    else if (N[5] === '0') {
+    } else if (N[5] === '0') {
       var addSql = 'INSERT INTO the_light_table(status,time) VALUES(?,?)';
       var addSqlParams = ['turn off', `${datatimes}`];
       //增
@@ -98,6 +98,7 @@ function dataHandle(datastr){
   //开关窗帘start
   if (datastr.indexOf("C") != -1) {
     var N = [];
+
     function Abc(datastr) {
       return datastr.match(/[^,]+/gm);
     }
@@ -113,8 +114,7 @@ function dataHandle(datastr){
         }
         theCurtain = 'turn on';
       });
-    }
-    else if (N[4] === '0') {
+    } else if (N[4] === '0') {
       var addSql = 'INSERT INTO the_curtain_table(status,time) VALUES(?,?)';
       var addSqlParams = ['turn off', `${datatimes}`];
       //增
@@ -129,7 +129,108 @@ function dataHandle(datastr){
   }
   //开关窗帘end
 
+  //温湿度获取start
+  if (datastr.indexOf("W") != -1) {
+    var N = [];
+    function Abc(datastr) {
+      return datastr.match(/[^,]+/gm);
+    }
+    N = Abc(datastr);
+    var addSql = 'INSERT INTO the_wsdata_table(wdata,sdata,time) VALUES(?,?,?)';
+    var addSqlParams = [N[4], N[5], `${datatimes}`];
+    //增
+    connection.query(addSql, addSqlParams, function (err, result) {
+      if (err) {
+        console.log('[INSERT ERROR] - ', err.message);
+        return;
+      }
+      wdData = N[4];
+      sdData = N[5];
+    });
+  }
+  //温湿度获取end
 
+  //PM2.5获取start
+  if (datastr.indexOf("P") != -1) {
+    var N = [];
+    function Abc(datastr) {
+      return datastr.match(/[^,]+/gm);
+    }
+    N = Abc(datastr);
+    var addSql = 'INSERT INTO the_pmdata_table(data,time) VALUES(?,?)';
+    var addSqlParams = [N[4], `${datatimes}`];
+    //增
+    connection.query(addSql, addSqlParams, function (err, result) {
+      if (err) {
+        console.log('[INSERT ERROR] - ', err.message);
+        return;
+      }
+      airData = N[4];
+    });
+  }
+  //PM2.5获获取end
+
+  //雨量获取start
+  if (datastr.indexOf("R") != -1) {
+    var N = [];
+    function Abc(datastr) {
+      return datastr.match(/[^,]+/gm);
+    }
+    N = Abc(datastr);
+    var addSql = 'INSERT INTO the_raindata_table(data,time) VALUES(?,?)';
+    var addSqlParams = [N[4], `${datatimes}`];
+    //增
+    connection.query(addSql, addSqlParams, function (err, result) {
+      if (err) {
+        console.log('[INSERT ERROR] - ', err.message);
+        return;
+      }
+     rainData = N[4];
+    });
+  }
+  //雨量获获取end
+
+
+  //可燃气获取start
+  if (datastr.indexOf("K") != -1) {
+    var N = [];
+    function Abc(datastr) {
+      return datastr.match(/[^,]+/gm);
+    }
+    N = Abc(datastr);
+    var addSql = 'INSERT INTO the_gasdata_table(data,time) VALUES(?,?)';
+    var addSqlParams = [N[4], `${datatimes}`];
+    //增
+    connection.query(addSql, addSqlParams, function (err, result) {
+      if (err) {
+        console.log('[INSERT ERROR] - ', err.message);
+        return;
+      }
+     
+     gasData = N[4];
+    });
+  }
+  //可燃气获获取end
+
+  //火焰警报获取start
+  if (datastr.indexOf("H") != -1) {
+    var N = [];
+    function Abc(datastr) {
+      return datastr.match(/[^,]+/gm);
+    }
+    N = Abc(datastr);
+    var addSql = 'INSERT INTO the_firedata_table(data,time) VALUES(?,?)';
+    var addSqlParams = [N[4], `${datatimes}`];
+    //增
+    connection.query(addSql, addSqlParams, function (err, result) {
+      if (err) {
+        console.log('[INSERT ERROR] - ', err.message);
+        return;
+      }
+      fireData =  N[4];
+    });
+  }
+  //火焰警报获获取end
 }
 
 //返回数据加入数据库处理end
@@ -184,20 +285,12 @@ function yuyin(res) {
       sockets.write('@@,0,2end,L,A,0,##\r\n')
       console.log('成功');
     } else if (resdata.indexOf("开窗帘") != -1) {
-      sockets.write('@@,0,2end,C,1,##\r\n')
+      sockets.write('@@,3,2end,C,1,##\r\n')
       console.log('成功');
     } else if (resdata.indexOf("关窗帘") != -1) {
-      sockets.write('@@,0,2end,C,0,##\r\n')
-      console.log('成功');
-    } else if (resdata.indexOf("两个") != -1) {
-      sockets.write('@@,0,2end,L,A,get,##\r\n')
-      sockets.write('@@,0,2end,C,get,##\r\n')
-      console.log('成功');
-    } else if (resdata.indexOf("全部") != -1) {
-      sockets.write('@@,0,2end,A,##\r\n')
+      sockets.write('@@,3,2end,C,0,##\r\n')
       console.log('成功');
     }
-    // sockets.write(`${res}`)
     console.log('--------------------------INSERT----------------------------');
     console.log('INSERT ID:', result);
     console.log('-----------------------------------------------------------------\n\n');
@@ -295,42 +388,178 @@ router.post('/recognition', function (req, res, next) {
   });
 });
 router.get('/getdevice', function (req, res, next) {
-
-  var wdData = '40';
-  var sdData = '';
-  var airData = '';
-  var rainData = '';
-  var gasData = '';
-  var fireData = '不安全';
-
-  res.json({
-    ret: 1,
-    data: {
-      "wdData": wdData,
-      "sdData": sdData,
-      "airData": airData,
-      "rainData": rainData,
-      "gasData": gasData,
-      "fireData": fireData
-    },
-    msg: 'chenggongchenggong'
-  });
+  sockets.write('@@,0,2end,A,##\r\n')
+  setTimeout(function(){
+    checkWSdData();
+    checkAirData();
+    checkRainData();
+    checkGasData();
+    checkFireData();
+    res.json({
+      ret: 1,
+      data: {
+        "wdData": wdData,
+        "sdData": sdData,
+        "airData": airData,
+        "rainData": rainData,
+        "gasData": gasData,
+        "fireData": fireData
+      },
+      msg: 'chenggongchenggong'
+    });
+  
+  },2000);
 
 });
+
+function checkLight() {
+  var theResult;
+  var sql = 'SELECT * FROM the_light_table where id=(select MAX(id) from the_light_table ) ';
+  //查
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log('[SELECT ERROR] - ', err.message);
+      return;
+    }
+    theResult = JSON.stringify(result);
+    theResult = JSON.parse(theResult);
+    console.log('--------------------------SELECT----------------------------');
+    console.log(result);
+    console.log(theResult);
+    console.log(theResult[0].status);
+    theLight = theResult[0].status;
+    console.log(theLight);
+    console.log('------------------------------------------------------------\n\n');
+  });
+}
+function checkCurtain() {
+  var theResult;
+  var sql = 'SELECT * FROM the_curtain_table where id=(select MAX(id) from the_curtain_table )';
+  //查
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log('[SELECT ERROR] - ', err.message);
+      return;
+    }
+    theResult = JSON.stringify(result);
+    theResult = JSON.parse(theResult);
+    console.log('--------------------------SELECT----------------------------');
+    console.log(result);
+    console.log(theResult);
+    console.log(theResult[0].status);
+    theCurtain = theResult[0].status;
+    console.log(theLight);
+    console.log('------------------------------------------------------------\n\n');
+  });
+}
+
+function checkWSdData() {
+  var theResult;
+  var sql = 'SELECT * FROM the_wsdata_table where id=(select MAX(id) from the_wsdata_table )';
+  //查
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log('[SELECT ERROR] - ', err.message);
+      return;
+    }
+    theResult = JSON.stringify(result);
+    theResult = JSON.parse(theResult);
+    console.log('--------------------------SELECT----------------------------');
+    console.log(result);
+    console.log(theResult);
+    wdData = theResult[0].wdata;
+    sdData = theResult[0].sdata;
+    console.log('------------------------------------------------------------\n\n');
+  });
+}
+
+
+function checkAirData() {
+  var theResult;
+  var sql = 'SELECT * FROM the_pmdata_table where id=(select MAX(id) from the_pmdata_table )';
+  //查
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log('[SELECT ERROR] - ', err.message);
+      return;
+    }
+    theResult = JSON.stringify(result);
+    theResult = JSON.parse(theResult);
+    console.log('--------------------------SELECT----------------------------');
+    console.log(result);
+    console.log(theResult);
+    airData = theResult[0].data;
+    console.log('------------------------------------------------------------\n\n');
+  });
+}
+
+function checkRainData() {
+  var theResult;
+  var sql = 'SELECT * FROM the_raindata_table where id=(select MAX(id) from the_raindata_table )';
+  //查
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log('[SELECT ERROR] - ', err.message);
+      return;
+    }
+    theResult = JSON.stringify(result);
+    theResult = JSON.parse(theResult);
+    console.log('--------------------------SELECT----------------------------');
+    console.log(result);
+    console.log(theResult);
+    rainData = theResult[0].data;
+    console.log('------------------------------------------------------------\n\n');
+  });
+}
+
+function checkGasData() {
+  var theResult;
+  var sql = 'SELECT * FROM the_gasdata_table where id=(select MAX(id) from the_gasdata_table )';
+  //查
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log('[SELECT ERROR] - ', err.message);
+      return;
+    }
+    theResult = JSON.stringify(result);
+    theResult = JSON.parse(theResult);
+    console.log('--------------------------SELECT----------------------------');
+    console.log(result);
+    console.log(theResult);
+    gasData = theResult[0].data;
+    console.log('------------------------------------------------------------\n\n');
+  });
+}
+
+
+function checkFireData() {
+  var theResult;
+  var sql = 'SELECT * FROM the_firedata_table where id=(select MAX(id) from the_firedata_table )';
+  //查
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log('[SELECT ERROR] - ', err.message);
+      return;
+    }
+    theResult = JSON.stringify(result);
+    theResult = JSON.parse(theResult);
+    console.log('--------------------------SELECT----------------------------');
+    console.log(result);
+    console.log(theResult);
+    fireData = theResult[0].data;
+    console.log('------------------------------------------------------------\n\n');
+  });
+}
+
 router.get('/getLight', function (req, res, next) {
   if (theLight.indexOf("on") != -1) {
     sockets.write('@@,0,2end,L,A,0,##\r\n')
-    console.log('成功');
-    res.json({
-      ret: 1,
-      data: {
-        "theLight": theLight
-      },
-      msg: 'theLight'
-    });
   } else if (theLight.indexOf("off") != -1) {
     sockets.write('@@,0,2end,L,A,1,##\r\n')
-    console.log('成功');
+  }
+ 
+  setTimeout(function(){
+    checkLight();
     res.json({
       ret: 1,
       data: {
@@ -338,31 +567,45 @@ router.get('/getLight', function (req, res, next) {
       },
       msg: 'theLight'
     });
-  }
+  },1000);
+
 });
 router.get('/getCurtain', function (req, res, next) {
-  res.json({
-    ret: 1,
-    data: {
-      "theCurtain": theCurtain
-    },
-    msg: 'theCurtain'
-  });
-
+  if (theCurtain.indexOf("on") != -1) {
+    sockets.write('@@,3,2end,C,0,##\r\n')
+    console.log('成功');
+  } else if (theCurtain.indexOf("off") != -1) {
+    sockets.write('@@,3,2end,C,1,##\r\n')
+    console.log('成功');
+  }
+ 
+  setTimeout(function(){
+    checkCurtain();
+    res.json({
+      ret: 1,
+      data: {
+        "theCurtain": theCurtain
+      },
+      msg: 'theCurtain'
+    });
+  },1000);
 });
 router.get('/getLightCurtain', function (req, res, next) {
-
   sockets.write('@@,0,2end,L,A,get,##\r\n')
-  sockets.write('@@,0,2end,C,get,##\r\n')
+  sockets.write('@@,3,2end,C,get,##\r\n')
+  checkLight();
+  checkCurtain();
+  setTimeout(function(){
+    res.json({
+      ret: 1,
+      data: {
+        "theLight": theLight,
+        "theCurtain": theCurtain
+      },
+      msg: 'getLightCurtain'
+    });
+  },1000);
 
-  res.json({
-    ret: 1,
-    data: {
-      "theLight": theLight,
-      "theCurtain": theCurtain
-    },
-    msg: 'getLightCurtain'
-  });
 
 });
 
