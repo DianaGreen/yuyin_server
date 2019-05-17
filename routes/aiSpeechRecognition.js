@@ -6,13 +6,26 @@ var Multiparty = require('multiparty');
 var ffmpeg = require('fluent-ffmpeg'); //创建一个ffmpeg命令
 var AipSpeechServer = require('baidu-aip-sdk').speech;
 
+//前端返回数据start
+var theLight = 'turn on';
+var theCurtain = 'turn off';
+
+var wdData = '40';
+var sdData = '';
+var airData = '';
+var rainData = '';
+var gasData = '';
+var fireData = '不安全';
+//前端返回数据end
+
+
 //端口监听start
 var app = express();
 var server = require("http").Server(app);
 var io = require("socket.io")(server);
 var net = require('net');
 var dataclient = '';
-var returnDate = false;
+// var returnDate = false;
 var datatimes;
 var sockets = {};
 var netServer = net.createServer(function (c) {
@@ -20,21 +33,109 @@ var netServer = net.createServer(function (c) {
   sockets = c;
   c.on('data', function (data) {
     console.log('clientsensor:' + data); // 回发该数据，客户端将收到来自服务端的数据 
-    dataclient = data.toString();
-    if(dataclient!=''){
-      returnDate = true;
-    }
-    var date = new Date();
-    // datatimes = date.toLocaleString();  
+    var datastr = String(data);
+    // console.log("data:"+typeof(data));
+    // console.log("text:",datastr);
+    dataHandle(datastr);
+
+    // dataclient = data.toString();
+    // if(dataclient!=''){
+    //   returnDate = true;
+    // }
+    // var date = new Date(); 
   });
   c.on('end', function () {
     console.log('client disconnected');
+  });
+  c.on('error', function () {
+    console.log('socket 失去连接');
   });
   c.write('hello\r\n');
   c.pipe(c);
 });
 netServer.listen(8124);
 //端口监听end
+
+//返回数据加入数据库处理start
+function dataHandle(datastr){
+
+  var date = new Date();
+  datatimes = date.toLocaleString();
+  //开关灯start
+  if (datastr.indexOf("L") != -1) {
+    var N = [];
+    function Abc(datastr) {
+      return datastr.match(/[^,]+/gm);
+    }
+    N = Abc(datastr);
+    if (N[5] === '1') {
+      var addSql = 'INSERT INTO the_light_table(status,time) VALUES(?,?)';
+      var addSqlParams = ['turn on', `${datatimes}`];
+      //增
+      connection.query(addSql, addSqlParams, function (err, result) {
+        if (err) {
+          console.log('[INSERT ERROR] - ', err.message);
+          return;
+        }
+        theLight = 'turn on';
+      });
+    }
+    else if (N[5] === '0') {
+      var addSql = 'INSERT INTO the_light_table(status,time) VALUES(?,?)';
+      var addSqlParams = ['turn off', `${datatimes}`];
+      //增
+      connection.query(addSql, addSqlParams, function (err, result) {
+        if (err) {
+          console.log('[INSERT ERROR] - ', err.message);
+          return;
+        }
+        theLight = 'turn off';
+      });
+    }
+  }
+  //开关灯end
+
+  //开关窗帘start
+  if (datastr.indexOf("C") != -1) {
+    var N = [];
+    function Abc(datastr) {
+      return datastr.match(/[^,]+/gm);
+    }
+    N = Abc(datastr);
+    if (N[4] === '1') {
+      var addSql = 'INSERT INTO the_curtain_table(status,time) VALUES(?,?)';
+      var addSqlParams = ['turn on', `${datatimes}`];
+      //增
+      connection.query(addSql, addSqlParams, function (err, result) {
+        if (err) {
+          console.log('[INSERT ERROR] - ', err.message);
+          return;
+        }
+        theCurtain = 'turn on';
+      });
+    }
+    else if (N[4] === '0') {
+      var addSql = 'INSERT INTO the_curtain_table(status,time) VALUES(?,?)';
+      var addSqlParams = ['turn off', `${datatimes}`];
+      //增
+      connection.query(addSql, addSqlParams, function (err, result) {
+        if (err) {
+          console.log('[INSERT ERROR] - ', err.message);
+          return;
+        }
+        theCurtain = 'turn off';
+      });
+    }
+  }
+  //开关窗帘end
+
+
+}
+
+//返回数据加入数据库处理end
+
+
+
 
 
 //配置数据库开始 
@@ -43,10 +144,10 @@ var connection = mysql.createConnection({
   user: 'yonga',
   password: '9977',
   database: 'yuyin_db',
-  port: '3306', 
+  port: '3306',
 });
 
-connection.connect(function(err) {
+connection.connect(function (err) {
   if (err) throw err
 });
 //配置数据库结束
@@ -64,7 +165,7 @@ var SECRET_KEY = "5yAh6IkGeqlKgGrLgGB94ZEb6OizYopq";
 function yuyin(res) {
 
   var date = new Date();
-  datatimes = date.toLocaleString(); 
+  datatimes = date.toLocaleString();
   var addSql = 'INSERT INTO yuyin_command_table(user,command,time) VALUES(?,?,?)';
   var addSqlParams = ['gangan', `${res}`, `${datatimes}`];
   //增
@@ -73,31 +174,26 @@ function yuyin(res) {
       console.log('[INSERT ERROR] - ', err.message);
       return;
     }
-    console.log('resssssssssss',res);
-     var resdata = res.toString();
-     console.log('resdataaaa',resdata);
-    if(resdata.indexOf("开灯") != -1){
+    console.log('resssssssssss', res);
+    var resdata = res.toString();
+    console.log('resdataaaa', resdata);
+    if (resdata.indexOf("开灯") != -1) {
       sockets.write('@@,0,2end,L,A,1,##\r\n')
       console.log('成功');
-    }
-    else if(resdata.indexOf("关灯") != -1){
+    } else if (resdata.indexOf("关灯") != -1) {
       sockets.write('@@,0,2end,L,A,0,##\r\n')
       console.log('成功');
-    }
-    else if(resdata.indexOf("开窗帘") != -1){
+    } else if (resdata.indexOf("开窗帘") != -1) {
       sockets.write('@@,0,2end,C,1,##\r\n')
       console.log('成功');
-    }
-    else if(resdata.indexOf("关窗帘") != -1){
+    } else if (resdata.indexOf("关窗帘") != -1) {
       sockets.write('@@,0,2end,C,0,##\r\n')
       console.log('成功');
-    }
-    else if(resdata.indexOf("两个") != -1){
+    } else if (resdata.indexOf("两个") != -1) {
       sockets.write('@@,0,2end,L,A,get,##\r\n')
       sockets.write('@@,0,2end,C,get,##\r\n')
       console.log('成功');
-    }
-    else if(resdata.indexOf("全部") != -1){
+    } else if (resdata.indexOf("全部") != -1) {
       sockets.write('@@,0,2end,A,##\r\n')
       console.log('成功');
     }
@@ -159,14 +255,14 @@ router.post('/recognition', function (req, res, next) {
             // res.send(dataclient);
             var allResult = result;
             allResult.dataclient = dataclient;
-            console.log('allResult',allResult);
-            console.log('thedataclientdataclient',dataclient);
-            console.log('thereturnDate',returnDate);
-            if(returnDate = true){
-              returnDate = false;
-              res.end(JSON.stringify(allResult));
+            console.log('allResult', allResult);
+            console.log('thedataclientdataclient', dataclient);
+            // console.log('thereturnDate',returnDate);
+            // if(returnDate = true){
+            //   returnDate = false;
+            res.end(JSON.stringify(allResult));
 
-            }
+            // }
             // else{
             //   dataclient = '';
             //   res.end(JSON.stringify(allResult));
@@ -200,11 +296,74 @@ router.post('/recognition', function (req, res, next) {
 });
 router.get('/getdevice', function (req, res, next) {
 
+  var wdData = '40';
+  var sdData = '';
+  var airData = '';
+  var rainData = '';
+  var gasData = '';
+  var fireData = '不安全';
+
+  res.json({
+    ret: 1,
+    data: {
+      "wdData": wdData,
+      "sdData": sdData,
+      "airData": airData,
+      "rainData": rainData,
+      "gasData": gasData,
+      "fireData": fireData
+    },
+    msg: 'chenggongchenggong'
+  });
+
+});
+router.get('/getLight', function (req, res, next) {
+  if (theLight.indexOf("on") != -1) {
+    sockets.write('@@,0,2end,L,A,0,##\r\n')
+    console.log('成功');
     res.json({
       ret: 1,
-      data: {},
-      msg: 'chenggongchenggong'
+      data: {
+        "theLight": theLight
+      },
+      msg: 'theLight'
     });
+  } else if (theLight.indexOf("off") != -1) {
+    sockets.write('@@,0,2end,L,A,1,##\r\n')
+    console.log('成功');
+    res.json({
+      ret: 1,
+      data: {
+        "theLight": theLight
+      },
+      msg: 'theLight'
+    });
+  }
+});
+router.get('/getCurtain', function (req, res, next) {
+  res.json({
+    ret: 1,
+    data: {
+      "theCurtain": theCurtain
+    },
+    msg: 'theCurtain'
+  });
 
-})
+});
+router.get('/getLightCurtain', function (req, res, next) {
+
+  sockets.write('@@,0,2end,L,A,get,##\r\n')
+  sockets.write('@@,0,2end,C,get,##\r\n')
+
+  res.json({
+    ret: 1,
+    data: {
+      "theLight": theLight,
+      "theCurtain": theCurtain
+    },
+    msg: 'getLightCurtain'
+  });
+
+});
+
 module.exports = router;
