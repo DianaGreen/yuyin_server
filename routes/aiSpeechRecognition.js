@@ -79,6 +79,9 @@ function dataHandle(datastr) {
           return;
         }
         theLight = 'turn on';
+        console.log('--------------------------INSERT----------------------------');
+        console.log(result);
+        console.log('------------------------------------------------------------\n\n');
       });
     } else if (N[5] === '0') {
       var addSql = 'INSERT INTO the_light_table(status,time) VALUES(?,?)';
@@ -90,6 +93,9 @@ function dataHandle(datastr) {
           return;
         }
         theLight = 'turn off';
+        console.log('--------------------------INSERT----------------------------');
+        console.log(result);
+        console.log('------------------------------------------------------------\n\n');
       });
     }
   }
@@ -113,6 +119,9 @@ function dataHandle(datastr) {
           return;
         }
         theCurtain = 'turn on';
+        console.log('--------------------------INSERT----------------------------');
+        console.log(result);
+        console.log('------------------------------------------------------------\n\n');
       });
     } else if (N[4] === '0') {
       var addSql = 'INSERT INTO the_curtain_table(status,time) VALUES(?,?)';
@@ -124,6 +133,9 @@ function dataHandle(datastr) {
           return;
         }
         theCurtain = 'turn off';
+        console.log('--------------------------INSERT----------------------------');
+        console.log(result);
+        console.log('------------------------------------------------------------\n\n');
       });
     }
   }
@@ -146,6 +158,9 @@ function dataHandle(datastr) {
       }
       wdData = N[4];
       sdData = N[5];
+      console.log('--------------------------INSERT----------------------------');
+      console.log(result);
+      console.log('------------------------------------------------------------\n\n');
     });
   }
   //温湿度获取end
@@ -166,6 +181,9 @@ function dataHandle(datastr) {
         return;
       }
       airData = N[4];
+      console.log('--------------------------INSERT----------------------------');
+      console.log(result);
+      console.log('------------------------------------------------------------\n\n');
     });
   }
   //PM2.5获获取end
@@ -186,6 +204,9 @@ function dataHandle(datastr) {
         return;
       }
      rainData = N[4];
+     console.log('--------------------------INSERT----------------------------');
+     console.log(result);
+     console.log('------------------------------------------------------------\n\n');
     });
   }
   //雨量获获取end
@@ -208,6 +229,9 @@ function dataHandle(datastr) {
       }
      
      gasData = N[4];
+     console.log('--------------------------INSERT----------------------------');
+     console.log(result);
+     console.log('------------------------------------------------------------\n\n');
     });
   }
   //可燃气获获取end
@@ -228,6 +252,9 @@ function dataHandle(datastr) {
         return;
       }
       fireData =  N[4];
+      console.log('--------------------------INSERT----------------------------');
+      console.log(result);
+      console.log('------------------------------------------------------------\n\n');
     });
   }
   //火焰警报获获取end
@@ -279,16 +306,20 @@ function yuyin(res) {
     var resdata = res.toString();
     console.log('resdataaaa', resdata);
     if (resdata.indexOf("开灯") != -1) {
-      sockets.write('@@,0,2end,L,A,1,##\r\n')
+      setTimeout(function(){sockets.write('@@,0,2end,L,A,1,##\r\n')}, 10);
+      // sockets.write('@@,0,2end,L,A,1,##\r\n')
       console.log('成功');
     } else if (resdata.indexOf("关灯") != -1) {
-      sockets.write('@@,0,2end,L,A,0,##\r\n')
+      setTimeout(function(){sockets.write('@@,0,2end,L,A,0,##\r\n')}, 10);
+      // sockets.write('@@,0,2end,L,A,0,##\r\n')
       console.log('成功');
     } else if (resdata.indexOf("开窗帘") != -1) {
-      sockets.write('@@,3,2end,C,1,##\r\n')
+      setTimeout(function(){sockets.write('@@,3,2end,C,1,##\r\n') }, 10);
+      // sockets.write('@@,3,2end,C,1,##\r\n')
       console.log('成功');
     } else if (resdata.indexOf("关窗帘") != -1) {
-      sockets.write('@@,3,2end,C,0,##\r\n')
+      setTimeout(function(){ sockets.write('@@,3,2end,C,0,##\r\n') }, 10);
+      // sockets.write('@@,3,2end,C,0,##\r\n')
       console.log('成功');
     }
     console.log('--------------------------INSERT----------------------------');
@@ -339,7 +370,9 @@ router.post('/recognition', function (req, res, next) {
           var voiceBuffer = new Buffer(voice);
           client.recognize(voiceBuffer, 'wav', 16000).then((result) => {
             //数据库调用start
-            yuyin(result.result)
+            if(result.result !== undefined ){
+              yuyin(result.result)
+            }
             //数据库调用end
             console.log('kkk', result.result);
             console.log('kkkall', result);
@@ -388,7 +421,8 @@ router.post('/recognition', function (req, res, next) {
   });
 });
 router.get('/getdevice', function (req, res, next) {
-  sockets.write('@@,0,2end,A,##\r\n')
+  setTimeout(function(){sockets.write('@@,0,2end,A,##\r\n') }, 10);
+  // sockets.write('@@,0,2end,A,##\r\n')
   setTimeout(function(){
     checkWSdData();
     checkAirData();
@@ -448,7 +482,7 @@ function checkCurtain() {
     console.log(theResult);
     console.log(theResult[0].status);
     theCurtain = theResult[0].status;
-    console.log(theLight);
+    console.log(theCurtain);
     console.log('------------------------------------------------------------\n\n');
   });
 }
@@ -553,9 +587,13 @@ function checkFireData() {
 
 router.get('/getLight', function (req, res, next) {
   if (theLight.indexOf("on") != -1) {
-    sockets.write('@@,0,2end,L,A,0,##\r\n')
+    console.log('灯原打开');
+    setTimeout(function(){sockets.write('@@,0,2end,L,A,0,##\r\n') }, 10);
+    // sockets.write('@@,0,2end,L,A,0,##\r\n')
   } else if (theLight.indexOf("off") != -1) {
-    sockets.write('@@,0,2end,L,A,1,##\r\n')
+    console.log('灯原关闭');
+    setTimeout(function(){sockets.write('@@,0,2end,L,A,1,##\r\n')}, 10);
+    // sockets.write('@@,0,2end,L,A,1,##\r\n')
   }
  
   setTimeout(function(){
@@ -572,11 +610,11 @@ router.get('/getLight', function (req, res, next) {
 });
 router.get('/getCurtain', function (req, res, next) {
   if (theCurtain.indexOf("on") != -1) {
-    sockets.write('@@,3,2end,C,0,##\r\n')
-    console.log('成功');
+    setTimeout(function(){sockets.write('@@,3,2end,C,0,##\r\n') }, 10);
+    // sockets.write('@@,3,2end,C,0,##\r\n')
   } else if (theCurtain.indexOf("off") != -1) {
-    sockets.write('@@,3,2end,C,1,##\r\n')
-    console.log('成功');
+    setTimeout(function(){sockets.write('@@,3,2end,C,1,##\r\n') }, 10);
+    // sockets.write('@@,3,2end,C,1,##\r\n')
   }
  
   setTimeout(function(){
@@ -591,8 +629,10 @@ router.get('/getCurtain', function (req, res, next) {
   },1000);
 });
 router.get('/getLightCurtain', function (req, res, next) {
-  sockets.write('@@,0,2end,L,A,get,##\r\n')
-  sockets.write('@@,3,2end,C,get,##\r\n')
+  setTimeout(function(){sockets.write('@@,0,2end,L,A,get,##\r\n')}, 10);
+  setTimeout(function(){ sockets.write('@@,3,2end,C,get,##\r\n')}, 10);
+  // sockets.write('@@,0,2end,L,A,get,##\r\n')
+  // sockets.write('@@,3,2end,C,get,##\r\n')
   checkLight();
   checkCurtain();
   setTimeout(function(){
